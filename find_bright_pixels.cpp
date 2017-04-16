@@ -41,7 +41,7 @@ public:
     void imageCb(const sensor_msgs::ImageConstPtr& msg) {
         cv_bridge::CvImagePtr cv_ptr; //OpenCV data type
         try {
-            cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO8);//Changed RGB8 to MONO8 becuase the image is one plane.
+            cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO16);//Changed RGB8 to MONO8 becuase the image is one plane.
         } catch (cv_bridge::Exception& e) {
             ROS_ERROR("cv_bridge exception: %s", e.what());
             return;
@@ -51,7 +51,9 @@ public:
         int isum = 0; //accumulate the column values of red pixels
         int jsum = 0; //accumulate the row values of red pixels
         int greyval;
-	int testval;
+        int gval;
+
+    int testval;
         cv::Vec2b greypix; // OpenCV representation of an grey pixel
         //comb through all pixels (j,i)= (row,col)
         for (int i = 0; i < cv_ptr->image.cols; i++) {
@@ -59,15 +61,18 @@ public:
                 greypix = cv_ptr->image.at<cv::Vec2b>(j, i); //extract an RGB pixel
                 //examine intensity of R, G and B components (0 to 255)
                 greyval = greypix[0] ; 
+                gval = greypix[1];
 
+                
                 //look for red values that are large compared to blue+green
               
                 //if red (enough), paint this white:
-                if (greyval > g_brightratio) {
+                if (greyval > 125) {
           
                     npix++; //note that found another bright pixel
                     isum += i; //accumulate row and col index vals
                     jsum += j;
+                    //ROS_WARN("Greyval is :%d and Gval is : %d ", jsum , isum );
                 } 
             }
         }
@@ -76,7 +81,7 @@ public:
         int half_box = 5; // choose size of box to paint
         int i_centroid, j_centroid;
         double x_centroid, y_centroid;
-        if (npix > 0) {
+     //   if (npix > 0) {
             i_centroid = isum / npix; // average value of u component of red pixels
             j_centroid = jsum / npix; // avg v component
             x_centroid = ((double) isum)/((double) npix); //floating-pt version
@@ -95,7 +100,7 @@ public:
                 }
             }
 
-        }
+    //    }
         // Update GUI Window; this will display processed images on the open-cv viewer.
         cv::imshow(OPENCV_WINDOW, cv_ptr->image);
         cv::waitKey(3); //need waitKey call to update OpenCV image window
@@ -109,12 +114,12 @@ public:
 }; //end of class definition
 
 int main(int argc, char** argv) {
-    ros::init(argc, argv, "red_pixel_finder");
+    ros::init(argc, argv, "bright_pixel_finder");
     ros::NodeHandle n; //        
     ImageConverter ic(n); // instantiate object of class ImageConverter
     //cout << "enter red ratio threshold: (e.g. 10) ";
     //cin >> g_brightratio;
-    g_brightratio= 125; //choose a threshold to define what is "bright" enough
+    g_brightratio= 80; //choose a threshold to define what is "bright" enough
     ros::Duration timer(0.1);
     double x, y, z;
     while (ros::ok()) {
