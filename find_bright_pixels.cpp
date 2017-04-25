@@ -20,6 +20,7 @@ class ImageConverter {
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_;
     image_transport::Publisher image_pub_;
+    ros::Publisher centroid_pub_;
 
 public:
 
@@ -31,6 +32,7 @@ public:
         image_pub_ = it_.advertise("/image_converter/output_video", 1);
 
         cv::namedWindow(OPENCV_WINDOW);
+        centroid_pub_ = nodehandle.advertise<std_msgs::Float64>("/centroid", 1);
     }
 
     ~ImageConverter() {
@@ -85,6 +87,9 @@ public:
             i_centroid = isum / npix; // average value of u component of red pixels
             j_centroid = jsum / npix; // avg v component
             x_centroid = ((double) isum)/((double) npix); //floating-pt version
+            std_msgs::Float64 centroid_msg;
+            centroid_msg.data = x_centroid;
+            centroid_pub_.publish(centroid_msg);
             y_centroid = ((double) jsum)/((double) npix);
             ROS_INFO("u_avg: %f; v_avg: %f",x_centroid,y_centroid);
             //cout << "i_avg: " << i_centroid << endl; //i,j centroid of red pixels
